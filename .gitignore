@@ -1,0 +1,8 @@
+postgres-data
+
+mongo-data
+
+logger-service/loggerApp
+authentication-service/authApp
+broker-service/brokerApp
+front-end/frontApp
