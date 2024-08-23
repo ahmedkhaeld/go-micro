@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8080:80"
+      - "8082:8080"
     deploy:
       mode: replicated
       replicas: 1
@@ -19,17 +19,19 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8082:80"
+      - "8083:8080"
     deploy:
       mode: replicated
       replicas: 1
     environment:
-       DSN: "host=postgres port=5433 user=postgres password=postgres dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+      DSN: "host=postgresql-service port=5432 user=postgres password=postgres dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+    depends_on:
+      - postgresql-service
       
   postgresql-service:
     image: postgres:16
     ports:
-      - "5433:5432"
+      - "5432:5432"
     restart: always
     deploy:
       mode: replicated
