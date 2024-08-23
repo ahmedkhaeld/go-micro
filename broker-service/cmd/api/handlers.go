@@ -11,11 +11,17 @@ import (
 type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
+	Log    LogPayload  `json:"log,omitempty"`
 }
 
 type AuthPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type LogPayload struct {
+	Name string `json:"name"`
+	Data string `json:"data"`
 }
 
 func (app *App) Broker(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +45,8 @@ func (app *App) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	switch requestPayload.Action {
 	case "auth":
 		app.Authenticate(w, requestPayload.Auth)
+	case "log":
+		app.Log(w, requestPayload.Log)
 	default:
 		app.ErrorJSON(w, fmt.Errorf("unknown action: %s", requestPayload.Action), http.StatusBadRequest)
 		return
@@ -101,4 +109,40 @@ func (app *App) Authenticate(w http.ResponseWriter, a AuthPayload) {
 	payload.Message = fmt.Sprintf("Authenticated user %s", a.Email)
 	app.WriteJSON(w, http.StatusAccepted, payload)
 
+}
+
+func (app *App) Log(w http.ResponseWriter, l LogPayload) {
+	// create some json we'll send to the log microservice
+	jsonData, err := json.MarshalIndent(l, "", "\t")
+	if err != nil {
+		app.ErrorJSON(w, errors.New("could not marshal json"), http.StatusInternalServerError)
+		return
+	}
+
+	//call the log service
+	url := "http://logger-service:8080/log"
+
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.ErrorJSON(w, errors.New("could not send post req"), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.ErrorJSON(w, errors.New("error with from remote response"), http.StatusInternalServerError)
+		return
+	}
+	defer response.Body.Close()
+
+	//make sure the response is correct status code
+	if response.StatusCode != http.StatusAccepted {
+		app.ErrorJSON(w, fmt.Errorf("unexpected status code: %d", response.StatusCode), http.StatusInternalServerError)
+		return
+	}
+
+	var payload responsePayload
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Logged data: %s", l.Data)
+	app.WriteJSON(w, http.StatusAccepted, payload)
 }
