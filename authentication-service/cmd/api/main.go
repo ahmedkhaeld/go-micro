@@ -14,7 +14,9 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-const webPort = "80"
+const webPort = "8080"
+
+var counts int64
 
 type App struct {
 	DB     *sql.DB
@@ -26,6 +28,9 @@ func main() {
 
 	//connect to database
 	conn := connectToPostgres()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
 
 	defer conn.Close()
 
@@ -70,13 +75,22 @@ func connectToPostgres() *sql.DB {
 	dsn := os.Getenv("DSN")
 
 	for {
-		conn, err := openPostgresConn(dsn)
-		if err == nil {
-			log.Println("Successfully connected to the database!")
-			return conn
+		connection, err := openPostgresConn(dsn)
+		if err != nil {
+			log.Println("Postgres not yet ready ...")
+			counts++
+		} else {
+			log.Println("Connected to Postgres!")
+			return connection
 		}
 
-		log.Printf("Failed to connect to the database: %v, retrying in 5 seconds...\n", err)
-		time.Sleep(5 * time.Second)
+		if counts > 10 {
+			log.Println(err)
+			return nil
+		}
+
+		log.Println("Backing off for two seconds....")
+		time.Sleep(2 * time.Second)
+		continue
 	}
 }
