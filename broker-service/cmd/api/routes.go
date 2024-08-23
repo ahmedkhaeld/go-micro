@@ -22,7 +22,11 @@ func (app *App) routes() http.Handler {
 
 	mux.Use(middleware.Heartbeat("/ping"))
 
+	//Check if the server is responding with no error
 	mux.Post("/", app.Broker)
+
+	//single point of entry for microservices
+	mux.Post("/handle", app.HandleSubmission)
 
 	return mux
 }

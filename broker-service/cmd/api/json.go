@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type response struct {
+type responsePayload struct {
 	Error   bool   `json:"error"`
 	Message string `json:"message"`
 	Data    any    `json:"data,omitempty"`
@@ -34,7 +34,7 @@ func (app *App) WriteJSON(w http.ResponseWriter, status int, data any, headers .
 	}
 	return nil
 }
-func (app *App) ReadJSON(w http.ResponseWriter, r *http.Request, data any, AllowUnknownFields bool, MaxJSONSize ...int) error {
+func (app *App) ReadJSON(w http.ResponseWriter, r *http.Request, data any, MaxJSONSize ...int) error {
 	maxBytes := 1048576 // 1MB default
 	if len(MaxJSONSize) > 0 {
 		maxBytes = MaxJSONSize[0]
@@ -42,11 +42,6 @@ func (app *App) ReadJSON(w http.ResponseWriter, r *http.Request, data any, Allow
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)
-
-	// If not allowing unknown fields in JSON, disallow them.
-	if !AllowUnknownFields {
-		dec.DisallowUnknownFields()
-	}
 
 	// Attempt to decode the data and figure out what the error is to send back a human-readable response.
 	err := dec.Decode(data)
