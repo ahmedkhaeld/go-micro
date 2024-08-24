@@ -1,9 +1,11 @@
 postgres-data
-
 mongo-data
+rabbitmq-data
+
 
 logger-service/loggerApp
 authentication-service/authApp
 broker-service/brokerApp
 front-end/frontApp
 mail-service/mailerApp
+listener-service/listenerApp
