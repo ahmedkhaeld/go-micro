@@ -28,5 +28,7 @@ func (app *App) routes() http.Handler {
 	//single point of entry for microservices
 	mux.Post("/handle", app.HandleSubmission)
 
+	mux.Post("/log-grpc", app.LogViaGRPC)
+
 	return mux
 }
